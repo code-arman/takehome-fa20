@@ -49,10 +49,11 @@ def hello_world():
 def mirror(name):
     data = {"name": name}
     return create_response(data)
+# Old implementation of /restaurants
 
-@app.route("/restaurants", methods=['GET'])
-def get_all_restaurants():
-    return create_response({"restaurants": db.get('restaurants')})
+# @app.route("/restaurants", methods=['GET'])
+# def get_all_restaurants():
+#     return create_response({"restaurants": db.get('restaurants')})
 
 @app.route("/restaurants/<id>", methods=['DELETE'])
 def delete_restaurant(id):
@@ -63,6 +64,55 @@ def delete_restaurant(id):
 
 
 # TODO: Implement the rest of the API here!
+
+# @route   GET /restaurants/<id>/
+# @desc    Returns restaurant with specified id
+@app.route("/restaurants/<id>", methods=['GET'])
+def get_restaurant(id):
+  restaurant = db.getById('restaurants', int(id))
+  if restaurant is None:
+    return create_response(status=404, message="No restaurant with this id exists")
+  return create_response(restaurant)
+  
+# @route1   GET /restaurants
+# @desc1    Returns all restaurants
+
+# @route2   GET /restaurants?minRating=<someNumber>
+# @desc2   Returns all restaurants that have a rating that is  minRating or higher
+
+@ app.route("/restaurants", methods=['GET'])
+def get_all_restaurants():
+    restaurants = db.get('restaurants')
+    minRating = request.args.get('minRating')
+    if minRating == None: # if there is no query string parameter
+      return create_response({"restaurants": db.get('restaurants')}) #list all resturants
+    filtered_restaurants = []
+
+    for i in range(0,len(restaurants)): # iterate through restaurants and append to array if the restaurant's rating is greater than or equal to the minRating                       
+     if restaurants[i]['rating'] >= int(minRating): 
+        filtered_restaurants.append(restaurants[i])
+
+    if len(filtered_restaurants) == 0: # if there are no such resturants with a rating greater than or equal to the minRating 
+      return create_response(status=404, message="No restaurants with a rating greater than or equal to the given rating exist")
+    return create_response({"restaurants": filtered_restaurants})
+
+# @route   POST /restaurants
+# @desc    Adds new restaurant
+
+@app.route("/restaurants", methods=['POST'])
+def add_a_restaurant():
+  try:
+    newRestaurant = {
+    'name': request.json['name'],
+    'rating': request.json['rating']}
+  except KeyError:
+    return create_response(status=422, message="Body parameters do not contain both name and rating. Please try again.")
+  
+  db.create('restaurants',newRestaurant) 
+  return create_response({"restaurant": newRestaurant},status=201) 
+  
+
+
 
 """
 ~~~~~~~~~~~~ END API ~~~~~~~~~~~~
